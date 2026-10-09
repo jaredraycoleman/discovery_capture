@@ -27,10 +27,24 @@ EK's notes write the same model with $a_i = a^i$, $T_k = 2(a^k - 1)/(a-1)$ for t
 | $v$ known, $D$ unknown, discovery | $\mathrm{CR}(r,v) = (1-v)\,r^2(r+1)/((1-v)r-(1+v))$; $r^* = (1+2v+\sqrt{5+4v})/(2(1-v))$; CR$^*$ = Eq. (7) of the draft | draft | simulator, Wolfram |
 | $v$ known, $D$ unknown, capture | $\mathrm{CR}(r,v) = \frac{1-v}{1+v}\big(2r^3/((1-v)r-(1+v)) - 1\big)$; $r^* = 3(1+v)/(2(1-v))$; CR$^* = (2v+1)(v+5)^2/(2(1-v)^2(1+v))$ | draft | simulator, Wolfram |
 | $D$ known, $v$ unknown, discovery and capture | $a_i = A^{b^i}$ gives $O((1-v)^{-\alpha(b)})$, $\alpha(b) = b^3/(b-1) - 1$, minimized at $b = 3/2$ with $\alpha = 23/4$ | draft | exponent algebra in Wolfram; asymptotics not yet checked numerically at the exponent level (convergence is slow, see below) |
-| Lower bounds, all regimes | matching lower bounds | draft asserts; EK partially proves for $v = 0$ | **not proved** |
+| Lower bounds, $v$ known (incl. $v=0$), alternating strategies | matching lower bounds via Gal's theorem in the reach parametrization | this repo (main.tex Section 5) | Wolfram (`verify_lower_bound.wls`) |
+| Lower bounds, $v$ known, arbitrary side patterns | only the weaker universal bounds $(3+v+2\sqrt{2(1+v)})/(1-v)$ and $8/(1-v) - (1-v)/(1+v)$ | this repo | Wolfram; tight version is a conjecture |
 | $23/4$ universal lower exponent | Conjectures 8.1 and 8.2 of the draft | draft | open |
 
-Scripts: `code/simulate.py` (exact brute force for any landing sequence), `code/verify_known_speed.wls`, `code/verify_unknown_speed_exponent.wls`.
+Scripts: `code/simulate.py` (exact brute force for any landing sequence), `code/explore_strategies.py` (full-supremum check of the geometric strategy, and optimization over non-alternating periodic side patterns), `code/verify_known_speed.wls`, `code/verify_lower_bound.wls`, `code/verify_unknown_speed_exponent.wls`.
+
+### Model clarification: sorties must return to the origin
+
+Neither draft says how often the searcher may land. If landings are free and unrestricted, the searcher can land at every point of its flight and the model collapses to classical linear search (CR 9 at $v=0$, $1+8(1+v)/(1-v)^2$ in general), which is *below* the drafts' "lower bounds". Both drafts in fact analyze sorties that fly out, land once, and return to the origin. Section 2 of main.tex now states this explicitly: a strategy is a sequence of sorties from the origin, one landing each. This needs sign-off from the coauthors.
+
+### Lower bounds (Section 5 of main.tex): what is proved and how
+
+- **Reach parametrization.** With $q=(1+v)/(1-v)$ and $z_i = B_i(v)$: $S_i = qS_{i-1} + z_i/(1-v)$, so $S_i$, $a_i$, $t_i$ are positive linear forms in the reaches. This makes the adversary ratios $(1-v)t_{i+2}/z_i$ (discovery) and $\frac{1-v}{1+v}(2S_{i+2}/z_i-1)$ (capture) functionals of exactly the type covered by Gal's theorem (continuous, homogeneous, quasi-convex by the mediant inequality, shift-monotone). Working with sortie lengths directly fails because the reach $B_i = (1-v)a_i - 2vS_{i-1}$ has mixed signs.
+- **Gal's theorem** is cited in the form of Theorem 3 of Angelopoulos, Dürr, Jin (arXiv 1810.08109), which attributes it to Gal (1980) and Schuierer (2001). Their printed condition 5 reads $F_{i+1}(X) \ge F_i(X^{k+1})$, almost certainly a typo for $X^{+1}$. Check the original before submission.
+- **Geometric reach sequences** $z_j=\alpha^j$ give $S_i = (\alpha^{i+1}-q^{i+1})/((1-v)(\alpha-q))$. For $\alpha>q$ the functionals converge (from below) to the geometric-strategy formulas of Section 4; for $\alpha\le q$ they diverge. So the lower bound equals the Section 4 optimum.
+- **Class covered:** alternating strategies that are *eventually monotone* (from some index on, every reach is at least 1 and at least every earlier reach on the same side). Useless sorties cannot simply be deleted without breaking alternation, which is why the class is stated this way.
+- **Arbitrary side patterns** are open. Deleting useless sorties is WLOG for general strategies, but then the pattern is arbitrary and the three-term functional has unbounded lookahead. Using the "next landing" instead of "next same-side landing" gives valid universal bounds (Theorem on universal lower bounds), which are weak. Numerics (`explore_strategies.py`, Q2) show every periodic non-alternating pattern optimizing back to the alternating optimum at $v\in\{0,0.5\}$, so we conjecture the tight bounds hold universally.
+- **Exact tightness of the upper bounds** (full supremum over $D\ge 1$, not just asymptotic) holds for $a_i = c\,r^{*i}$: confirmed numerically for $v\in\{0,0.2,0.5,0.8\}$ (`explore_strategies.py`, Q1) and sketched in a remark in main.tex.
 
 ### Discrepancy: EK's mobile-target formulas
 
@@ -53,7 +67,7 @@ The draft says the lower bound "can be phrased as a sequence lemma": the adversa
 
 ## Open problems (from both drafts)
 
-1. Prove the matching lower bounds for the stationary and known-speed cases (discovery and capture). EK's $s_i$ technique is the natural tool.
+1. Extend the known-speed lower bounds from alternating strategies to arbitrary side patterns (conjecture in Section 5.5 of main.tex). The $s_i$ monotone-sequence technique of EK's notes cannot close even the alternating case, since the functionals involve three consecutive sorties; Gal's theorem does.
 2. Prove or refute the conjectured $23/4$ lower exponent for arbitrary strategies with unknown speed.
 3. Nonstationary doubly-exponential schedules (varying $b_i$) to improve constants while keeping the exponent.
 4. Randomized strategies (random initial side, phase, or threshold schedule).

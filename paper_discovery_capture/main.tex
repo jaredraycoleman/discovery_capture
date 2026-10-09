@@ -76,20 +76,20 @@ Demaine, Fekete, and Gal studied linear and star search with a fixed turn cost~\
 
 \subsection{Contributions and organization}
 
-Section~\ref{sec:model} gives the model. Section~\ref{sec:static} treats the stationary target ($v = 0$). Section~\ref{sec:known-speed} gives tight bounds when $v$ is known and $D$ is unknown. Section~\ref{sec:unknown-speed} treats the case where $D$ is known but $v$ is not. Section~\ref{sec:lower-conj} records a conjectured matching lower bound exponent for the latter case. Table~\ref{tab:summary} summarizes the results.
+Section~\ref{sec:model} gives the model. Section~\ref{sec:static} treats the stationary target ($v = 0$). Section~\ref{sec:known-speed} analyzes geometric strategies when $v$ is known and $D$ is unknown, and Section~\ref{sec:lower} proves the matching lower bounds via Gal's theorem on sequence functionals. Section~\ref{sec:unknown-speed} treats the case where $D$ is known but $v$ is not. Section~\ref{sec:lower-conj} records a conjectured matching lower bound exponent for the latter case. Table~\ref{tab:summary} summarizes the results.
 
 \begin{table}[t]
 \centering
-\caption{Summary of results. ``$D$ known'' means the magnitude $|d| = D$ is known but the sign of $d$ is not. Entries marked $\dagger$ have an upper bound whose matching lower bound is not yet written in full.}
+\caption{Summary of results. ``$D$ known'' means the magnitude $|d| = D$ is known but the sign of $d$ is not. Lower bounds marked $\ddagger$ are proved for alternating strategies (Section~\ref{sec:lower}); for arbitrary side patterns only the weaker bounds of Theorem~\ref{thm:lb-universal} are known.}
 \label{tab:summary}
 \begin{tabular}{llll}
 \toprule
 Objective & Information & Competitive ratio & Status \\
 \midrule
-Discovery & $v = 0$, $D$ unknown & $\frac{11 + 5\sqrt{5}}{2} \approx 11.09$ & upper bound; lower bound$^\dagger$ \\
-Capture   & $v = 0$, $D$ unknown & $\frac{25}{2}$ & upper bound; lower bound$^\dagger$ \\
-Discovery & $v$ known, $D$ unknown & Eq.~\eqref{eq:cr-disc-opt} & upper bound; lower bound$^\dagger$ \\
-Capture   & $v$ known, $D$ unknown & Eq.~\eqref{eq:cr-cap-opt} & upper bound; lower bound$^\dagger$ \\
+Discovery & $v = 0$, $D$ unknown & $\frac{11 + 5\sqrt{5}}{2} \approx 11.09$ & tight$^\ddagger$ \\
+Capture   & $v = 0$, $D$ unknown & $\frac{25}{2}$ & tight$^\ddagger$ \\
+Discovery & $v$ known, $D$ unknown & Eq.~\eqref{eq:cr-disc-opt} & tight$^\ddagger$ \\
+Capture   & $v$ known, $D$ unknown & Eq.~\eqref{eq:cr-cap-opt} & tight$^\ddagger$ \\
 Discovery & $D$ known, $v$ unknown & $O\big((1-v)^{-23/4}\big)$ & upper bound \\
 Capture   & $D$ known, $v$ unknown & $O\big((1-v)^{-23/4}\big)$ & upper bound \\
 \bottomrule
@@ -107,7 +107,11 @@ and moves directly away from the origin at a constant speed $0 \leq v < 1$, so i
 
 The searcher cannot detect the target while flying. At a landing at position $x$ at time $t$, it discovers the target if $x$ has the correct sign and $|x| \geq D + vt$; equivalently, the target lies between the origin and the landing point.
 
-A \emph{landing strategy} is specified by alternating landing points $x_i = (-1)^i a_i$ with $a_i > 0$, $i \geq 0$. Write
+\paragraph{Sorties.} The landing-only restriction is meaningful only together with a restriction on how often the searcher may land. A searcher allowed to land at every point of its flight path detects the target at the moment it passes over it, and the problem collapses to classical linear search for an escaping target, whose optimal competitive ratio is $1 + 8(1+v)/(1-v)^2$ (and $9$ at $v = 0$)~\cite{alpern2003theory,coleman2022oblivious}. We therefore require that every flight start and end at the origin: the searcher's trajectory is a sequence of \emph{sorties}, each flying from the origin to a landing point and back. A landing that discovers the target ends the discovery problem; in the capture problem the searcher instead flies from the landing point directly to the target. One may think of a drone that must return to its base between flights.
+
+\JC{This is the key modeling assumption, and neither draft states it. Both analyze sorties that return to the origin, so I believe it is what everyone has in mind, but we should agree on it explicitly. Without it the lower bounds below are false (classical search gives $9 < (11+5\sqrt5)/2$ at $v = 0$).}
+
+A \emph{strategy} is a sequence of sortie lengths $a_i > 0$ and sides $\sigma_i \in \{-1, +1\}$, $i \geq 0$, landing at $x_i = \sigma_i a_i$. It is \emph{alternating} if $\sigma_i = (-1)^i$. All strategies analyzed in Sections~\ref{sec:static}--\ref{sec:unknown-speed} are alternating, and so is the class covered by the tight lower bounds of Section~\ref{sec:lower}; general side patterns are discussed in Section~\ref{sec:lower-general}. For an alternating strategy write
 \[
   S_i := \sum_{j=0}^{i} a_j, \qquad S_{-1} := 0 .
 \]
@@ -119,7 +123,9 @@ The \emph{effective reach} of landing $i$ against speed $v$ is
 \begin{equation}\label{eq:reach}
   B_i(v) := a_i - v t_i = (1-v) a_i - 2 v S_{i-1} ,
 \end{equation}
-and a target on the side of landing $i$ is discovered there exactly when $D \leq B_i(v)$.
+and a target on the side of landing $i$ is discovered there exactly when $D \leq B_i(v)$. Equations~\eqref{eq:landing-time} and~\eqref{eq:reach} hold verbatim for non-alternating strategies, since landing times and reaches depend only on the sortie lengths.
+
+Call sortie $i$ \emph{useful} if $B_i(v) \geq 1$ and $B_i(v) > B_j(v)$ for every earlier sortie $j$ on the same side. A sortie that is not useful discovers no target that was not already discovered, and deleting it shortens every later landing time, which by~\eqref{eq:reach} increases every later reach and decreases every discovery and capture time. Deleting a sortie from an alternating strategy, however, produces a non-alternating one. We say an alternating strategy is \emph{eventually monotone} if there is an index $i_0$ such that for all $i \geq i_0$, $B_i(v) \geq 1$ and $B_i(v) \geq B_j(v)$ for every $j < i$ with $j \equiv i \pmod 2$. Geometric strategies $a_i = c\, r^i$ with $r > (1+v)/(1-v)$ and $c \geq 1/(1-v)$ are eventually monotone with $i_0 = 0$.
 
 If $\sigma$, $D$, and $v$ are all known, a unit-speed searcher meets the target at time
 \begin{equation}\label{eq:opt}
@@ -139,7 +145,7 @@ Suppose the target is discovered at landing $i$. The searcher is then beyond the
 \FloatBarrier
 \section{Stationary target}\label{sec:static}
 
-\JC{TODO. Both drafts cover $v = 0$: geometric excursions $a_i = r^i$ give discovery ratio $r^2(r+1)/(r-1)$, minimized at $r = (1+\sqrt5)/2$ with value $(11+5\sqrt5)/2$, and capture ratio $2r^3/(r-1) - 1$, minimized at $r = 3/2$ with value $25/2$. EK's notes (\texttt{references/dis-cap-line.pdf}, Sections~2.2.2 and 2.2.3) start the matching lower bounds via the $s_i = S_{i-1}/x_i$ recurrence but stop at the recurrence inequalities; those arguments need to be completed.}
+\JC{TODO. Both drafts cover $v = 0$: geometric excursions $a_i = r^i$ give discovery ratio $r^2(r+1)/(r-1)$, minimized at $r = (1+\sqrt5)/2$ with value $(11+5\sqrt5)/2$, and capture ratio $2r^3/(r-1) - 1$, minimized at $r = 3/2$ with value $25/2$. The lower bounds are the $v = 0$ case of Theorems~\ref{thm:lb-disc} and~\ref{thm:lb-cap}; the monotone-sequence technique of EK's notes (\texttt{references/dis-cap-line.pdf}, Sections~2.2.2 and 2.2.3) does not close because the discovery and capture functionals involve three consecutive sorties, which is exactly what Gal's theorem handles. Decide whether this section should exist at all or whether $v = 0$ is just a corollary.}
 
 \FloatBarrier
 \section{Known speed, unknown distance}\label{sec:known-speed}
@@ -172,7 +178,7 @@ At $v = 0$ this is $(11 + 5\sqrt5)/2$, and $\CR^{*}_{\disc}(v) \sim 27/(1-v)^2$ 
 Minimize $f(r) = r^2(r+1)/((1-v) r - (1+v))$ over the feasible range~\eqref{eq:feasible}. Then $f'(r) = 0$ if and only if $(1-v) r^2 - (1 + 2v) r - (1+v) = 0$, whose feasible root is~\eqref{eq:r-disc-opt}; substituting into~\eqref{eq:cr-disc-r} gives~\eqref{eq:cr-disc-opt}. These identities are checked symbolically in \texttt{code/verify\_known\_speed.wls}.
 \end{proof}
 
-\JC{TODO: the lower bound. The draft in \texttt{references/landing\_only\_mobile\_line\_search.pdf} reduces it to the ``critical recurrence'' $S_i + S_{i-1} = K\big((1-v) S_{i-2} - (1+v) S_{i-3}\big)$ and asserts, without proof, that the sharp constant equals the geometric minimum. We need an actual argument (e.g.\ the $s_i$ monotone-sequence technique from EK's notes, or the Gal/Bose--De Carufel framework).}
+The matching lower bound is Theorem~\ref{thm:lb-disc} in Section~\ref{sec:lower}.
 
 \subsection{Capture}
 
@@ -196,9 +202,129 @@ At $v = 0$ this is $25/2$, and $\CR^{*}_{\capt}(v) \sim 27/(1-v)^2$ as $v \to 1^
 It suffices to minimize $K(r) = r^3 / ((1-v) r - (1+v))$. The derivative vanishes when $3 r^2 ((1-v) r - (1+v)) = (1-v) r^3$, i.e.\ $2(1-v) r = 3(1+v)$, giving~\eqref{eq:r-cap-opt} and $K^{*} = 27(1+v)^2 / (4(1-v)^3)$. Substituting into~\eqref{eq:cr-cap-r} yields~\eqref{eq:cr-cap-opt}. See \texttt{code/verify\_known\_speed.wls}.
 \end{proof}
 
-\JC{TODO: lower bound, as for discovery.}
+The matching lower bound is Theorem~\ref{thm:lb-cap}.
 
 \EK{The formulas for $\CR_{\disc}(v)$ and $\CR_{\capt}(v)$ in \texttt{references/dis-cap-line.pdf} (Table~1 and Sections~2.3.2--2.3.3) differ from~\eqref{eq:cr-disc-opt} and~\eqref{eq:cr-cap-opt} for $v > 0$ although they agree at $v = 0$. The simulator \texttt{code/simulate.py} agrees with the formulas above; see \texttt{notes/model\_and\_results.md}.}
+
+\FloatBarrier
+\section{Lower bounds for known speed}\label{sec:lower}
+
+Throughout this section $v \in [0, 1)$ is fixed and $q := (1+v)/(1-v)$. The lower bounds follow the standard route for linear search: an adversary places the target just beyond the reach of a landing, the resulting ratios form a sequence of functionals of the strategy, and a theorem of Gal shows that the supremum of such functionals is minimized by a geometric sequence. The one twist is that the reaches $B_i(v)$ are not positive linear forms in the sortie lengths, so we parametrize strategies by their reaches instead.
+
+\subsection{Reach parametrization}
+
+\begin{lemma}[Reach parametrization]\label{lem:reach}
+Let $(a_i)_{i \geq 0}$ be an alternating strategy and $z_i := B_i(v)$ its reaches. Then
+\begin{equation}\label{eq:S-from-z}
+  S_i = q\, S_{i-1} + \frac{z_i}{1-v} = \frac{1}{1-v} \sum_{j=0}^{i} q^{\,i-j} z_j, \qquad
+  a_i = \frac{z_i + 2v S_{i-1}}{1-v}, \qquad
+  t_i = S_i + S_{i-1} .
+\end{equation}
+Conversely, every sequence of positive reals $(z_i)_{i \geq 0}$ is the reach sequence of exactly one alternating strategy, and that strategy has positive sortie lengths.
+\end{lemma}
+\begin{proof}
+By~\eqref{eq:reach}, $z_i = (1-v) a_i - 2v S_{i-1} = (1-v) S_i - (1+v) S_{i-1}$, which rearranges to the recurrence in~\eqref{eq:S-from-z}; unrolling it with $S_{-1} = 0$ gives the sum. The formulas for $a_i = S_i - S_{i-1}$ and $t_i = 2S_{i-1} + a_i$ follow. For the converse, define $S_i$ by the recurrence and $a_i := S_i - S_{i-1} = \frac{2v}{1-v} S_{i-1} + \frac{z_i}{1-v} > 0$. The identities are checked symbolically in \texttt{code/verify\_lower\_bound.wls}.
+\end{proof}
+
+For a positive sequence $Z = (z_0, z_1, \ldots)$ we write $S_i(Z)$ for the quantity defined by~\eqref{eq:S-from-z}; it is a linear form in $z_0, \ldots, z_i$ with positive coefficients that depend only on the differences $i - j$.
+
+\subsection{Gal's theorem}
+
+For a sequence $X = (x_0, x_1, \ldots)$ let $X^{+1} := (x_1, x_2, \ldots)$ and let $G_\alpha := (1, \alpha, \alpha^2, \ldots)$.
+
+\begin{theorem}[Gal~\cite{gal1980}; Schuierer~\cite{schuierer2001lower}]\label{thm:gal}
+Let $X = (x_0, x_1, \ldots)$ be a sequence of positive numbers, $r \geq 0$ an integer, and $\alpha := \limsup_{n \to \infty} x_n^{1/n} \in \mathbb{R} \cup \{+\infty\}$. Let $F_i$, $i \geq 0$, be functionals such that
+\begin{enumerate}
+  \item $F_i(X)$ depends only on $x_0, \ldots, x_{i+r}$;
+  \item $F_i$ is continuous on $\{x_k > 0 : 0 \leq k \leq i + r\}$;
+  \item $F_i(\lambda X) = F_i(X)$ for all $\lambda > 0$;
+  \item $F_i(X + Y) \leq \max\{F_i(X), F_i(Y)\}$;
+  \item $F_{i+1}(X) \geq F_i(X^{+1})$.
+\end{enumerate}
+Then $\sup_{i \geq 0} F_i(X) \geq \sup_{i \geq 0} F_i(G_\alpha)$, where for $\alpha = +\infty$ the right-hand side is read as $\lim_{\alpha \to \infty} \sup_i F_i(G_\alpha)$.
+\end{theorem}
+
+\JC{Statement transcribed from Theorem~3 of~\cite{angelopoulos2019bestoftwo} (there condition~5 is printed as $F_{i+1}(X) \geq F_i(X^{k+1})$, surely a typo for $X^{+1}$) and from Schuierer's definition $X^{+k} = (x_k, x_{k+1}, \ldots)$. Please check against~\cite{schuierer2001lower} and Alpern--Gal~\cite{alpern2003theory} before submission, in particular the convention for $\alpha = \infty$.}
+
+The functionals we use are all of the form $F_i(Z) = c_1 \frac{L_i(Z)}{z_i} - c_0$ with $c_1 > 0$, $c_0 \geq 0$, and $L_i$ a positive linear form in $z_0, \ldots, z_{i+2}$ whose coefficient of $z_j$ depends only on $i - j$. Such functionals satisfy the hypotheses of Theorem~\ref{thm:gal} with $r = 2$: conditions~1--3 are immediate; condition~4 is the mediant inequality $\frac{p_1 + p_2}{q_1 + q_2} \leq \max\{\frac{p_1}{q_1}, \frac{p_2}{q_2}\}$ for positive $p_k, q_k$, which is unaffected by the affine map $u \mapsto c_1 u - c_0$; and condition~5 holds because $F_{i+1}(Z) - F_i(Z^{+1})$ equals $c_1$ times the coefficient of $z_0$ in $L_{i+1}(Z)$, times $z_0 / z_{i+1} \geq 0$.
+
+For the geometric sequence $G_\alpha$ with $\alpha \neq q$,~\eqref{eq:S-from-z} gives
+\begin{equation}\label{eq:S-geo}
+  S_i(G_\alpha) = \frac{\alpha^{i+1} - q^{i+1}}{(1-v)(\alpha - q)}, \qquad\text{and}\qquad S_i(G_q) = \frac{(i+1) q^i}{1-v}.
+\end{equation}
+
+\subsection{Discovery}
+
+\begin{theorem}[Known-speed discovery, lower bound]\label{thm:lb-disc}
+Every eventually monotone alternating strategy has discovery competitive ratio at least $\CR^{*}_{\disc}(v)$, given by~\eqref{eq:cr-disc-opt}.
+\end{theorem}
+\begin{proof}
+Let $Z = (z_i)$ be the reach sequence of the strategy and $i_0$ the index from the definition of eventual monotonicity. Fix $i \geq i_0$ and $\varepsilon > 0$, and place the target on side $(-1)^i$ at distance $D = z_i + \varepsilon \geq 1$. No landing $j \leq i$ on that side discovers it, because $B_j(v) \leq z_i < D$. The next landing on that side is landing $i+2$, so the discovery time is at least $t_{i+2} = S_{i+2} + S_{i+1}$ and
+\[
+  \CR_{\disc} \;\geq\; (1-v)\,\frac{S_{i+2} + S_{i+1}}{z_i + \varepsilon} \quad\text{for all } \varepsilon > 0,
+  \qquad\text{hence}\qquad
+  \CR_{\disc} \;\geq\; F_i(Z) := (1-v)\,\frac{S_{i+2}(Z) + S_{i+1}(Z)}{z_i} .
+\]
+By Lemma~\ref{lem:reach}, $F_i$ has the form discussed after Theorem~\ref{thm:gal}, so Theorem~\ref{thm:gal} applies. Let $Z' := (z_{i_0}, z_{i_0+1}, \ldots)$, a sequence of positive numbers. Iterating condition~5, $F_i(Z') \leq F_{i + i_0}(Z) \leq \CR_{\disc}$ for every $i \geq 0$, so with $\alpha := \limsup_n (z'_n)^{1/n} \in [1, +\infty]$,
+\[
+  \CR_{\disc} \;\geq\; \sup_{i} F_i(Z') \;\geq\; \sup_i F_i(G_\alpha) .
+\]
+It remains to evaluate the right-hand side using~\eqref{eq:S-geo}. If $\alpha > q$ then
+\[
+  F_i(G_\alpha) \;\xrightarrow[i \to \infty]{}\; (1-v)\,\frac{\alpha^2 (\alpha + 1)}{(1-v)\alpha - (1+v)} = \CR_{\disc}(\alpha, v),
+\]
+the geometric-strategy ratio~\eqref{eq:cr-disc-r}, and $\sup_i F_i(G_\alpha)$ is at least this limit. If $1 \leq \alpha \leq q$ then $F_i(G_\alpha) \to \infty$, since the $q^{i}$ terms dominate (for $\alpha = q$, $F_i(G_q)$ grows linearly in $i$), and if $\alpha = \infty$ the bound is trivial. In every case $\CR_{\disc} \geq \inf_{\alpha > q} \CR_{\disc}(\alpha, v) = \CR^{*}_{\disc}(v)$, where the last equality is the minimization carried out in the proof of Theorem~\ref{thm:disc-known}: $\CR_{\disc}(\cdot, v)$ tends to $+\infty$ at both ends of $(q, \infty)$ and has the unique critical point $r^{*}_{\disc}(v)$ there. The limits and the minimization are verified in \texttt{code/verify\_lower\_bound.wls}.
+\end{proof}
+
+\subsection{Capture}
+
+\begin{theorem}[Known-speed capture, lower bound]\label{thm:lb-cap}
+Every eventually monotone alternating strategy has capture competitive ratio at least $\CR^{*}_{\capt}(v)$, given by~\eqref{eq:cr-cap-opt}.
+\end{theorem}
+\begin{proof}
+With the same adversary as in Theorem~\ref{thm:lb-disc}, the target $D = z_i + \varepsilon$ on side $(-1)^i$ is discovered at some landing $j \geq i+2$, and by~\eqref{eq:capture-time} the capture time is $(2S_j - D)/(1+v) \geq (2S_{i+2} - D)/(1+v)$. Dividing by $D/(1-v)$ and letting $\varepsilon \to 0$,
+\[
+  \CR_{\capt} \;\geq\; F'_i(Z) := \frac{1-v}{1+v} \left( \frac{2 S_{i+2}(Z)}{z_i} - 1 \right) ,
+\]
+again a functional of the admissible form. Theorem~\ref{thm:gal} applied to $Z' = (z_{i_0}, z_{i_0+1}, \ldots)$ gives $\CR_{\capt} \geq \sup_i F'_i(G_\alpha)$, and by~\eqref{eq:S-geo}, for $\alpha > q$,
+\[
+  F'_i(G_\alpha) \;\xrightarrow[i \to \infty]{}\; \frac{1-v}{1+v}\left( \frac{2\alpha^3}{(1-v)\alpha - (1+v)} - 1 \right) = \CR_{\capt}(\alpha, v),
+\]
+while $F'_i(G_\alpha) \to \infty$ for $\alpha \leq q$. Hence $\CR_{\capt} \geq \inf_{\alpha > q} \CR_{\capt}(\alpha, v) = \CR^{*}_{\capt}(v)$ by the minimization in the proof of Theorem~\ref{thm:cap-known}.
+\end{proof}
+
+\begin{remark}[Exact tightness]\label{rem:tight}
+The upper bounds of Theorems~\ref{thm:disc-known} and~\ref{thm:cap-known} were stated asymptotically in $i$. They hold exactly, as suprema over all $D \geq 1$, for $a_i = c\, r^{*} {}^i$ with $c = 1/(1-v)$: for a target just beyond $B_{i-2}(v)$ the ratio is
+\[
+  (1-v)\,\frac{c\,(r^{i+1} + r^{i}) - 2}{c\, r^{i-2}\big((1-v) r - (1+v)\big) + 2v} \;<\; \CR_{\disc}(r, v)
+\]
+for every finite $i \geq 2$, and the targets $D \in [1, B_0(v)]$ and $D \in [1, B_1(v)]$ found at the first two landings have ratios at most $(1-v) t_1 = 2 + r^{*}$, which is below $\CR^{*}$. The capture case is identical. The script \texttt{code/explore\_strategies.py} confirms numerically that the full supremum equals the asymptotic value. \JC{Write this out properly or drop the remark.}
+\end{remark}
+
+\subsection{General side patterns}\label{sec:lower-general}
+
+Theorems~\ref{thm:lb-disc} and~\ref{thm:lb-cap} cover alternating strategies. Shortening every useless sortie to length zero shows that an arbitrary strategy is equivalent to an alternating strategy in which some sorties have length zero and hence negative reach; the functionals $F_i$ and $F'_i$ are undefined at such indices, and the natural repair (dividing by the largest reach so far on the same side instead of $z_i$) destroys condition~4 of Theorem~\ref{thm:gal}, because a maximum of linear forms is not superadditive. Whether non-alternating side patterns can help is therefore open. Two pieces of evidence suggest they cannot.
+
+First, numerical optimization over periodic side patterns such as $(+,+,-)$, $(+,+,-,-)$ and $(+,+,-,+,-,-)$, with free sortie lengths within the period and a free period ratio (\texttt{code/explore\_strategies.py}), always returns the alternating optimum, with the surplus sorties shrinking to zero, for both objectives and for $v \in \{0, 0.5\}$.
+
+Second, the adversary argument does give a weaker bound for every strategy. For an arbitrary strategy whose sorties are all useful, the target just beyond $z_i$ is discovered no earlier than the \emph{next} landing $i+1$, and Lemma~\ref{lem:reach} holds for any side pattern, so $\CR_{\disc} \geq (1-v)(S_{i+1} + S_i)/z_i$ and $\CR_{\capt} \geq \frac{1-v}{1+v}(2S_{i+1}/z_i - 1)$ for all $i$. Theorem~\ref{thm:gal} and~\eqref{eq:S-geo} then yield the following.
+
+\begin{theorem}[Universal lower bounds]\label{thm:lb-universal}
+Every strategy, with any side pattern, satisfies
+\[
+  \CR_{\disc} \;\geq\; \frac{3 + v + 2\sqrt{2(1+v)}}{1-v}
+  \qquad\text{and}\qquad
+  \CR_{\capt} \;\geq\; \frac{8}{1-v} - \frac{1-v}{1+v} .
+\]
+At $v = 0$ these are $3 + 2\sqrt2 \approx 5.83$ and $7$.
+\end{theorem}
+\begin{proof}
+For $\alpha > q$ the two functionals on $G_\alpha$ tend to $(1-v)\alpha(\alpha+1)/((1-v)\alpha - (1+v))$ and $\frac{1-v}{1+v}\big(2\alpha^2/((1-v)\alpha - (1+v)) - 1\big)$, minimized over $\alpha > q$ at $\alpha = (1 + v + \sqrt{2(1+v)})/(1-v)$ and $\alpha = 2q$ respectively; for $\alpha \leq q$ they diverge. See \texttt{code/verify\_lower\_bound.wls}.
+\end{proof}
+
+\begin{conjecture}\label{conj:alternating}
+Theorems~\ref{thm:lb-disc} and~\ref{thm:lb-cap} hold for every strategy, with any side pattern.
+\end{conjecture}
 
 \FloatBarrier
 \section{Known distance, unknown speed}\label{sec:unknown-speed}
@@ -254,7 +380,7 @@ For every deterministic landing-only strategy $\mathcal{A}$ there is a sequence 
 \FloatBarrier
 \section{Conclusion and open problems}\label{sec:conclusion}
 
-\JC{TODO. Open directions from the drafts: (1) prove or refute Conjecture~\ref{conj:lower}; (2) complete the lower bounds for the known-speed and stationary cases; (3) nonstationary doubly-exponential schedules (varying $b$) to improve lower-order factors; (4) randomized strategies; (5) positive landing times or turn costs, connecting to~\cite{demaine2006online}.}
+\JC{TODO. Open directions from the drafts: (1) prove or refute Conjecture~\ref{conj:lower}; (2) extend the known-speed lower bounds from alternating strategies to arbitrary side patterns (Conjecture~\ref{conj:alternating}); (3) nonstationary doubly-exponential schedules (varying $b$) to improve lower-order factors; (4) randomized strategies; (5) positive landing times or turn costs, connecting to~\cite{demaine2006online}.}
 
 \bibliographystyle{splncs04}
 \bibliography{refs}

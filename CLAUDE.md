@@ -35,7 +35,9 @@ Read `paper_discovery_capture/notes/model_and_results.md` first. In short:
 
 - **Verified** (brute-force simulator plus Wolfram): the geometric-strategy competitive ratios and their optimizers for the stationary case and the known-speed case, for both discovery and capture. The formulas in the anonymous draft are correct.
 - **Wrong**: Evangelos' mobile-target formulas for discovery and capture (Table 1, Sections 2.3.2 and 2.3.3 of `dis-cap-line.pdf`) do not match the model for $v > 0$; they agree only at $v = 0$. He flagged the capture formula himself as unverified.
-- **Unproved**: every lower bound. The draft reduces them to "critical recurrences" and asserts the result. Evangelos' notes complete the lower bound only for classical linear search (static and mobile) and stop midway for discovery and capture.
+- **Model assumption made explicit**: every sortie starts and ends at the origin (one landing per flight). Without it, unrestricted landings reduce the problem to classical linear search and the claimed lower bounds are false. Neither draft states this; coauthors need to agree.
+- **Proved (Section 5 of main.tex)**: known-speed lower bounds (including $v=0$) matching the geometric upper bounds, for alternating strategies that are eventually monotone, via Gal's theorem on sequence functionals applied in the *reach parametrization* $z_i = B_i(v)$. Weaker universal bounds hold for arbitrary side patterns; the tight universal statement is a conjecture backed by numerics (`code/explore_strategies.py`).
+- **Still to write**: Section 3 (stationary target) is a corollary of Section 5 at $v=0$; the exact-tightness remark needs a full proof or removal; the Gal theorem statement must be checked against Schuierer 2001 / Alpern--Gal.
 - **Upper bound only**: the unknown-speed, known-distance regime, where $a_i = A^{b^i}$ with $b = 3/2$ gives $O((1-v)^{-23/4})$. The matching lower exponent is a conjecture.
 - `main.tex` is a skeleton: model, results table, the known-speed theorems with their one-line calculus proofs, and TODO markers (as `\JC{}` comments) everywhere else.
 
@@ -60,6 +62,8 @@ Read `paper_discovery_capture/notes/model_and_results.md` first. In short:
 ### Wolfram Language (symbolic verification)
 - `wolframscript -file <absolute path>.wls` (relative paths have failed from some working directories; use absolute paths).
 - `code/verify_known_speed.wls` checks the known-speed theorems and documents the discrepancy with Evangelos' formulas.
+- `code/verify_lower_bound.wls` checks the reach-parametrization identities, the limits of the lower-bound functionals on geometric reach sequences, the minimizations, and the universal bounds.
+- `code/explore_strategies.py` (Python) checks exact tightness of the geometric strategy over all $D \ge 1$ and optimizes periodic non-alternating side patterns (slow: about ten minutes).
 - `code/verify_unknown_speed_exponent.wls` checks the $\alpha(b) = b^3/(b-1) - 1$ exponent and $b = 3/2$.
 - Name new scripts `verify_<claim>.wls`, one per lemma or theorem, and keep them self-contained.
 
@@ -67,6 +71,7 @@ Read `paper_discovery_capture/notes/model_and_results.md` first. In short:
 
 - Landing sequence $a_i > 0$ at $x_i = (-1)^i a_i$; $S_i = \sum_{j \le i} a_j$; landing time $t_i = 2S_{i-1} + a_i$.
 - Reach $B_i(v) = a_i - v t_i = (1-v)a_i - 2vS_{i-1}$: landing $i$ discovers a target on its side iff $D \le B_i(v)$.
+- Reach parametrization (used for lower bounds): with $q = (1+v)/(1-v)$ and $z_i = B_i(v)$, $S_i = qS_{i-1} + z_i/(1-v)$, $a_i = (z_i + 2vS_{i-1})/(1-v)$, $t_i = S_i + S_{i-1}$. Geometric reaches $z_j = \alpha^j$ give $S_i = (\alpha^{i+1} - q^{i+1})/((1-v)(\alpha - q))$.
 - Feasibility for geometric $a_i = r^i$: $r > (1+v)/(1-v)$.
 - Benchmark $T^* = D/(1-v)$. Capture time after discovery at $i$: $(2S_i - D)/(1+v)$.
 - Known-speed optima: discovery $r^* = (1+2v+\sqrt{5+4v})/(2(1-v))$; capture $r^* = 3(1+v)/(2(1-v))$. Both ratios are $\sim 27/(1-v)^2$ as $v \to 1^-$.
