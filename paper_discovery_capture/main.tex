@@ -1,0 +1,262 @@
+\documentclass[runningheads,envcountsame,envcountsect]{llncs}
+
+\usepackage[T1]{fontenc}
+\usepackage{graphicx}
+\usepackage{amsfonts}
+\usepackage{latexsym,amssymb,amsmath}
+\usepackage{placeins}
+\usepackage{booktabs}
+\usepackage{comment}
+\usepackage{caption}
+\usepackage{subcaption}
+
+\usepackage[dvipsnames]{xcolor}
+\usepackage{hyperref}
+\renewcommand\UrlFont{\color{blue}\rmfamily}
+\urlstyle{rm}
+
+% Defer proofs to the appendix (same setup as the sar_plane paper). Statements
+% stay in the main text and are repeated in the appendix before their proof.
+\usepackage[bibliography=common,appendix=strip]{apxproof}
+\newtheoremrep{theorem}{Theorem}[section]
+\newtheoremrep{lemma}[theorem]{Lemma}
+
+% Author comment macros.
+\newcommand\JC[1]{{\color{Maroon} \textbf{JC}: #1}}
+\newcommand\EK[1]{{\color{Blue} \textbf{EK}: #1}}
+\newcommand\DK[1]{{\color{Green} \textbf{DK}: #1}}
+\newcommand\OM[1]{{\color{Purple} \textbf{OM}: #1}}
+
+% Notation macros.
+\newcommand{\CR}{\mathrm{CR}}
+\newcommand{\disc}{\mathrm{disc}}
+\newcommand{\capt}{\mathrm{cap}}
+\newcommand{\opt}{T^{*}}
+
+\title{Landing-Only Linear Search for an Escaping Target: Discovery and Capture}
+\titlerunning{Landing-Only Search for an Escaping Target}
+
+% Working author list: same as the companion planar paper. Adjust as needed.
+\author{Jared Coleman\inst{1} \and
+Evangelos Kranakis\inst{2} \and
+Danny Krizanc\inst{3} \and
+Oscar Morales-Ponce\inst{4}}
+
+\authorrunning{J. Coleman, E. Kranakis, D. Krizanc, and O. Morales-Ponce}
+
+\institute{Loyola Marymount University, Los Angeles, USA \\ \email{jared.coleman@lmu.edu} \and
+Carleton University, Ottawa, Canada \\ \email{kranakis@scs.carleton.ca} \and
+Wesleyan University, Middletown, USA \\ \email{dkrizanc@wesleyan.edu} \and
+California State University, Long Beach, USA \\ \email{Oscar.MoralesPonce@csulb.edu}}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+We study online search on the real line by a unit-speed flying searcher for a target that starts at unknown distance $D \geq 1$ from the origin and moves directly away from the origin at constant speed $v < 1$. Unlike classical linear search, the searcher cannot observe the target while flying: detection is possible only at a landing, and only when the target lies between the origin and the landing point. We distinguish \emph{discovery}, where the process stops when the target is detected, from \emph{capture}, where the searcher must subsequently meet the target. When $v$ is known we give tight bounds for both objectives. When the initial distance is known but $v$ is not, a doubly-exponential landing strategy achieves competitive ratio $O((1-v)^{-23/4})$ for both objectives as $v \to 1^-$, and we conjecture that this exponent is optimal.
+\keywords{Linear search \and escaping target \and competitive ratio \and online algorithms \and mobile agents}
+\end{abstract}
+
+\JC{This is a skeleton assembled from the two drafts in \texttt{references/}. Sections marked TODO still need to be written or verified; see \texttt{notes/model\_and\_results.md} for the current status of each claim.}
+
+\FloatBarrier
+\section{Introduction}\label{sec:intro}
+
+Online search asks how efficiently a mobile agent can locate an object whose relevant parameters are not known in advance. The classical one-dimensional problem, often called linear search or the cow-path problem~\cite{beck1964linear,baezayates1993searching}, places a stationary target at an unknown point of the line and compares an online zig-zag trajectory with a clairvoyant searcher. The optimal deterministic competitive ratio is $9$, achieved by doubling the excursion length on alternating sides.
+
+The present paper studies a mobile analogue with two additional constraints. First, the target is \emph{escaping}: it moves away from the origin at a fixed speed $v < 1$. Second, the searcher is a flying agent with \emph{landing-only} visibility. It receives no information while in flight. A target can be discovered only at a landing, and only if it lies on the segment joining the origin to the landing point. In this sense the searcher is ``forward blind'': overshooting the target in flight does not reveal it.
+
+We distinguish two objectives. In the \emph{discovery} problem the cost is the time of the first landing that reveals the target. In the \emph{capture} problem the searcher must, after discovery, physically meet the target.
+
+\subsection{Related work}\label{sec:related}
+
+Demaine, Fekete, and Gal studied linear and star search with a fixed turn cost~\cite{demaine2006online}; Bose and De Carufel developed a general framework for searching on a line~\cite{bose2013revisiting,bose2017general}. Search for an oblivious target moving away from the origin was introduced in~\cite{coleman2022oblivious}, and the effect of knowing the target's speed or initial distance was studied in~\cite{coleman2024escaping,coleman2026knowledge}. The information regimes considered there motivate the four-way classification used here. Our model differs in a crucial sensing assumption: passing the target in flight does not reveal it. The landing-only restriction is also the one-dimensional analogue of the planar search-and-rescue model of~\cite{coleman2026searchrescueplane}, where an agent must land on the $x$-axis before it can search along it.
+
+\JC{TODO: expand related work; cite the search-games books~\cite{alpern2003theory,gal1980} and the search-and-rescue line~\cite{coleman2023sar}.}
+
+\subsection{Contributions and organization}
+
+Section~\ref{sec:model} gives the model. Section~\ref{sec:static} treats the stationary target ($v = 0$). Section~\ref{sec:known-speed} gives tight bounds when $v$ is known and $D$ is unknown. Section~\ref{sec:unknown-speed} treats the case where $D$ is known but $v$ is not. Section~\ref{sec:lower-conj} records a conjectured matching lower bound exponent for the latter case. Table~\ref{tab:summary} summarizes the results.
+
+\begin{table}[t]
+\centering
+\caption{Summary of results. ``$D$ known'' means the magnitude $|d| = D$ is known but the sign of $d$ is not. Entries marked $\dagger$ have an upper bound whose matching lower bound is not yet written in full.}
+\label{tab:summary}
+\begin{tabular}{llll}
+\toprule
+Objective & Information & Competitive ratio & Status \\
+\midrule
+Discovery & $v = 0$, $D$ unknown & $\frac{11 + 5\sqrt{5}}{2} \approx 11.09$ & upper bound; lower bound$^\dagger$ \\
+Capture   & $v = 0$, $D$ unknown & $\frac{25}{2}$ & upper bound; lower bound$^\dagger$ \\
+Discovery & $v$ known, $D$ unknown & Eq.~\eqref{eq:cr-disc-opt} & upper bound; lower bound$^\dagger$ \\
+Capture   & $v$ known, $D$ unknown & Eq.~\eqref{eq:cr-cap-opt} & upper bound; lower bound$^\dagger$ \\
+Discovery & $D$ known, $v$ unknown & $O\big((1-v)^{-23/4}\big)$ & upper bound \\
+Capture   & $D$ known, $v$ unknown & $O\big((1-v)^{-23/4}\big)$ & upper bound \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\FloatBarrier
+\section{Model and notation}\label{sec:model}
+
+A searcher starts at the origin of $\mathbb{R}$ and moves with maximum speed $1$. A target starts at
+\[
+  d = \sigma D, \qquad \sigma \in \{-1, +1\}, \quad D \geq 1,
+\]
+and moves directly away from the origin at a constant speed $0 \leq v < 1$, so its position at time $t$ is $y(t) = \sigma(D + vt)$.
+
+The searcher cannot detect the target while flying. At a landing at position $x$ at time $t$, it discovers the target if $x$ has the correct sign and $|x| \geq D + vt$; equivalently, the target lies between the origin and the landing point.
+
+A \emph{landing strategy} is specified by alternating landing points $x_i = (-1)^i a_i$ with $a_i > 0$, $i \geq 0$. Write
+\[
+  S_i := \sum_{j=0}^{i} a_j, \qquad S_{-1} := 0 .
+\]
+Because the searcher returns through the origin between consecutive landings, the $i$th landing occurs at time
+\begin{equation}\label{eq:landing-time}
+  t_i = 2 S_{i-1} + a_i = 2 S_i - a_i .
+\end{equation}
+The \emph{effective reach} of landing $i$ against speed $v$ is
+\begin{equation}\label{eq:reach}
+  B_i(v) := a_i - v t_i = (1-v) a_i - 2 v S_{i-1} ,
+\end{equation}
+and a target on the side of landing $i$ is discovered there exactly when $D \leq B_i(v)$.
+
+If $\sigma$, $D$, and $v$ are all known, a unit-speed searcher meets the target at time
+\begin{equation}\label{eq:opt}
+  \opt(D, v) = \frac{D}{1 - v},
+\end{equation}
+and a clairvoyant searcher can land exactly at the meeting point, so we use~\eqref{eq:opt} as the benchmark for both discovery and capture. For known $v$ and unknown $D$ the competitive ratio of a strategy $\mathcal{A}$ is $\sup_{\sigma, D} T_{\mathcal{A}}(\sigma D, v) / \opt(D, v)$. When $D$ is known but $v$ is not, we use the speed-dependent ratio
+\[
+  \CR_{\mathcal{A}}(v) := \sup_{\sigma \in \{-1,+1\}} \frac{T_{\mathcal{A}}(\sigma D, v)}{D/(1-v)} ,
+\]
+and by scaling we may normalize $D = 1$.
+
+Suppose the target is discovered at landing $i$. The searcher is then beyond the target and reverses direction, closing at relative speed $1 + v$, so the total capture time is
+\begin{equation}\label{eq:capture-time}
+  T_i^{\capt}(D, v) = t_i + \frac{a_i - D - v t_i}{1 + v} = \frac{2 S_i - D}{1 + v} .
+\end{equation}
+
+\FloatBarrier
+\section{Stationary target}\label{sec:static}
+
+\JC{TODO. Both drafts cover $v = 0$: geometric excursions $a_i = r^i$ give discovery ratio $r^2(r+1)/(r-1)$, minimized at $r = (1+\sqrt5)/2$ with value $(11+5\sqrt5)/2$, and capture ratio $2r^3/(r-1) - 1$, minimized at $r = 3/2$ with value $25/2$. EK's notes (\texttt{references/dis-cap-line.pdf}, Sections~2.2.2 and 2.2.3) start the matching lower bounds via the $s_i = S_{i-1}/x_i$ recurrence but stop at the recurrence inequalities; those arguments need to be completed.}
+
+\FloatBarrier
+\section{Known speed, unknown distance}\label{sec:known-speed}
+
+Assume $v$ is known, whereas $D \geq 1$ and $\sigma$ are unknown. Consider geometric excursions $a_i = r^i$ with $r > 1$, so $S_i = (r^{i+1} - 1)/(r - 1)$. The effective reach~\eqref{eq:reach} is eventually positive only if
+\begin{equation}\label{eq:feasible}
+  r > \frac{1 + v}{1 - v},
+\end{equation}
+since $B_i(v)/a_i \to ((1-v) r - (1+v))/(r-1)$.
+
+\subsection{Discovery}
+
+A target on the side of landing $i$ that is first discoverable there was missed at landing $i-2$, so the worst case is $D \downarrow B_{i-2}(v)$ with discovery cost $t_i$. Asymptotically in $i$,
+\begin{equation}\label{eq:cr-disc-r}
+  \CR_{\disc}(r, v) = (1 - v) \frac{r^2 (r + 1)}{(1 - v) r - (1 + v)} .
+\end{equation}
+
+\begin{theorem}[Known-speed discovery]\label{thm:disc-known}
+For landing-only discovery with unknown initial distance and known speed $v$, the optimal geometric expansion is
+\begin{equation}\label{eq:r-disc-opt}
+  r^{*}_{\disc}(v) = \frac{1 + 2v + \sqrt{5 + 4v}}{2 (1 - v)},
+\end{equation}
+and the resulting competitive ratio is
+\begin{equation}\label{eq:cr-disc-opt}
+  \CR^{*}_{\disc}(v) = \frac{\big(\sqrt{5 + 4v} + 3\big)\big(2v + \sqrt{5 + 4v} + 1\big)^2}{4 (1 - v)^2 \big(\sqrt{5 + 4v} - 1\big)} .
+\end{equation}
+At $v = 0$ this is $(11 + 5\sqrt5)/2$, and $\CR^{*}_{\disc}(v) \sim 27/(1-v)^2$ as $v \to 1^-$.
+\end{theorem}
+\begin{proof}
+Minimize $f(r) = r^2(r+1)/((1-v) r - (1+v))$ over the feasible range~\eqref{eq:feasible}. Then $f'(r) = 0$ if and only if $(1-v) r^2 - (1 + 2v) r - (1+v) = 0$, whose feasible root is~\eqref{eq:r-disc-opt}; substituting into~\eqref{eq:cr-disc-r} gives~\eqref{eq:cr-disc-opt}. These identities are checked symbolically in \texttt{code/verify\_known\_speed.wls}.
+\end{proof}
+
+\JC{TODO: the lower bound. The draft in \texttt{references/landing\_only\_mobile\_line\_search.pdf} reduces it to the ``critical recurrence'' $S_i + S_{i-1} = K\big((1-v) S_{i-2} - (1+v) S_{i-3}\big)$ and asserts, without proof, that the sharp constant equals the geometric minimum. We need an actual argument (e.g.\ the $s_i$ monotone-sequence technique from EK's notes, or the Gal/Bose--De Carufel framework).}
+
+\subsection{Capture}
+
+With the same worst case $D \downarrow B_{i-2}(v)$, equation~\eqref{eq:capture-time} gives
+\begin{equation}\label{eq:cr-cap-r}
+  \CR_{\capt}(r, v) = \frac{1 - v}{1 + v} \left( \frac{2 r^3}{(1 - v) r - (1 + v)} - 1 \right) .
+\end{equation}
+
+\begin{theorem}[Known-speed capture]\label{thm:cap-known}
+The optimal geometric expansion for capture is
+\begin{equation}\label{eq:r-cap-opt}
+  r^{*}_{\capt}(v) = \frac{3 (1 + v)}{2 (1 - v)},
+\end{equation}
+and the resulting competitive ratio is
+\begin{equation}\label{eq:cr-cap-opt}
+  \CR^{*}_{\capt}(v) = \frac{27 (1 + v)}{2 (1 - v)^2} - \frac{1 - v}{1 + v} = \frac{(2v + 1)(v + 5)^2}{2 (1 - v)^2 (1 + v)} .
+\end{equation}
+At $v = 0$ this is $25/2$, and $\CR^{*}_{\capt}(v) \sim 27/(1-v)^2$ as $v \to 1^-$.
+\end{theorem}
+\begin{proof}
+It suffices to minimize $K(r) = r^3 / ((1-v) r - (1+v))$. The derivative vanishes when $3 r^2 ((1-v) r - (1+v)) = (1-v) r^3$, i.e.\ $2(1-v) r = 3(1+v)$, giving~\eqref{eq:r-cap-opt} and $K^{*} = 27(1+v)^2 / (4(1-v)^3)$. Substituting into~\eqref{eq:cr-cap-r} yields~\eqref{eq:cr-cap-opt}. See \texttt{code/verify\_known\_speed.wls}.
+\end{proof}
+
+\JC{TODO: lower bound, as for discovery.}
+
+\EK{The formulas for $\CR_{\disc}(v)$ and $\CR_{\capt}(v)$ in \texttt{references/dis-cap-line.pdf} (Table~1 and Sections~2.3.2--2.3.3) differ from~\eqref{eq:cr-disc-opt} and~\eqref{eq:cr-cap-opt} for $v > 0$ although they agree at $v = 0$. The simulator \texttt{code/simulate.py} agrees with the formulas above; see \texttt{notes/model\_and\_results.md}.}
+
+\FloatBarrier
+\section{Known distance, unknown speed}\label{sec:unknown-speed}
+
+Assume $D = |d|$ is known (normalize $D = 1$) but $\sigma$ and $v$ are unknown. No uniform constant ratio is possible as $v \to 1^-$, so we bound the ratio as a function of the actual speed.
+
+\subsection{Doubly-exponential strategy and induced speed thresholds}
+
+Fix $A > 1$ and $b > 1$ and use alternating excursions
+\begin{equation}\label{eq:doubly-exp}
+  a_i = A^{b^i} .
+\end{equation}
+The maximal speed handled by round $i$ is defined by the critical equality $1 + v_i t_i = a_i$, so by~\eqref{eq:landing-time}
+\begin{equation}\label{eq:threshold}
+  v_i = \frac{a_i - 1}{a_i + 2 S_{i-1}}, \qquad \delta_i := 1 - v_i = \frac{1 + 2 S_{i-1}}{a_i + 2 S_{i-1}} .
+\end{equation}
+Since the sequence is doubly exponential, $S_i = a_i(1 + o(1))$ and $a_{i-1}/a_i = A^{-(b-1) b^{i-1}}$, hence
+\begin{equation}\label{eq:delta-asymp}
+  \delta_i \sim 2 \frac{a_{i-1}}{a_i} = 2 A^{-(b-1) b^{i-1}} .
+\end{equation}
+For a fixed actual speed $v$ let $i(v) := \max\{ i : v_i < v \}$. Round $i(v) + 1$ is speed-sufficient; since the sign is unknown, the adversary can force one more round, so discovery happens by round $i(v) + 2$.
+
+\begin{theorem}[Unknown-speed discovery]\label{thm:disc-unknown}
+For the strategy~\eqref{eq:doubly-exp},
+\[
+  \CR_{\disc}(v) = O\big( (1 - v)^{-\alpha(b)} \big), \qquad \alpha(b) := \frac{b^3}{b - 1} - 1,
+\]
+as $v \to 1^-$. The exponent is minimized uniquely at $b = 3/2$, giving $\CR_{\disc}(v) = O\big((1-v)^{-23/4}\big)$.
+\end{theorem}
+\begin{proof}
+\JC{TODO: port the proof from the draft (Theorem~5.1 there). Sketch: with $i = i(v)$, $\delta_{i+1} \leq 1 - v < \delta_i$; the normalized cost $\delta\, t_{i+2}$ is increasing in $\delta$, so the worst case on this interval is $\delta_i a_{i+2} \asymp A^{[b^3 - (b-1)] b^{i-1}}$ while $\delta_i^{-1} \asymp A^{(b-1) b^{i-1}}$. Then $\alpha'(b) = b^2 (2b - 3)/(b-1)^2$.}
+\end{proof}
+
+\begin{theorem}[Unknown-speed capture]\label{thm:cap-unknown}
+For the strategy~\eqref{eq:doubly-exp}, $\CR_{\capt}(v) = O\big((1 - v)^{-\alpha(b)}\big)$ with the same $\alpha(b)$, hence $O\big((1-v)^{-23/4}\big)$ at $b = 3/2$.
+\end{theorem}
+\begin{proof}
+\JC{TODO. By~\eqref{eq:capture-time} with $D = 1$, $\CR_{\capt}(v) \leq \frac{1-v}{1+v}(2 S_{i(v)+2} - 1) \leq (1 + o(1)) (1-v) a_{i(v)+2}$, and the exponent calculation is identical to Theorem~\ref{thm:disc-unknown}.}
+\end{proof}
+
+\FloatBarrier
+\section{A conjectured matching lower exponent}\label{sec:lower-conj}
+
+Normalize $D = 1$ and consider an arbitrary alternating landing strategy with $\delta_i = (1 + 2 S_{i-1})/(S_i + S_{i-1})$ as in~\eqref{eq:threshold}. When $S_i \gg S_{i-1}$, $\delta_i \asymp S_{i-1}/S_i$. Taking a speed just above $v_i$ and the adverse sign, both discovery and capture cost roughly $\delta_i S_{i+2}$ in normalized terms. With local growth exponents $p_i := \log S_i / \log S_{i-1}$, this suggests the local lower-bound exponent $p_i p_{i+1} p_{i+2}/(p_i - 1) - 1$, which for constant $p$ is $p^3/(p-1) - 1$, minimized at $p = 3/2$ with value $23/4$.
+
+\begin{conjecture}[Universal unknown-speed lower exponent]\label{conj:lower}
+For every deterministic landing-only strategy $\mathcal{A}$ there is a sequence $v_k \to 1^-$ such that, for discovery and likewise for capture,
+\[
+  \CR_{\mathcal{A}}(v_k) = \Omega\big( (1 - v_k)^{-23/4 + o(1)} \big) .
+\]
+\end{conjecture}
+
+\FloatBarrier
+\section{Conclusion and open problems}\label{sec:conclusion}
+
+\JC{TODO. Open directions from the drafts: (1) prove or refute Conjecture~\ref{conj:lower}; (2) complete the lower bounds for the known-speed and stationary cases; (3) nonstationary doubly-exponential schedules (varying $b$) to improve lower-order factors; (4) randomized strategies; (5) positive landing times or turn costs, connecting to~\cite{demaine2006online}.}
+
+\bibliographystyle{splncs04}
+\bibliography{refs}
+
+\end{document}

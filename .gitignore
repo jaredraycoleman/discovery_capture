@@ -1,0 +1,19 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Scratch notes at the repo root (paper notes live in paper_discovery_capture/notes and are tracked)
+notes
+
+# Claude Code local settings
+.claude/settings.local.json
+
+# Stray LaTeX logs at the root
+texput.log
