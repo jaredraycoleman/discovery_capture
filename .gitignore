@@ -10,7 +10,7 @@ wheels/
 .venv
 
 # Scratch notes at the repo root (paper notes live in paper_discovery_capture/notes and are tracked)
-notes
+/notes
 
 # Claude Code local settings
 .claude/settings.local.json
